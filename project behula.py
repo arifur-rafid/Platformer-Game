@@ -8,6 +8,7 @@ from pygame import mixer
 import pygame
 import math
 import random
+import os
 
 mixer.init()
 pygame.init()
@@ -67,9 +68,25 @@ class Behula(pygame.sprite.Sprite):
         self.jump = False
         self.in_air = True
         self.vel_y = 0
-        img = pygame.image.load('asset/behula.png')
-        self.image = pygame.transform.scale(
-            img, (int(img.get_width() * scale), int(img.get_height() * scale)))
+        self.animation_list = []
+        self.frame_index = 0
+        self.action = 0
+        self.update_time = pygame.time.get_ticks()
+
+        # load all images for the players
+        animation_types = ['run', 'jump']
+        for animation in animation_types:
+            # reset temporary list of images
+            temp_list = []
+            # count number of files in the folder
+            num_of_frames = len(os.listdir(f'asset/{self.char_type}/{animation}'))
+            for i in range(num_of_frames):
+                img = pygame.image.load(f'asset/{self.char_type}/{animation}/{i}.png')
+                img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
+                temp_list.append(img)
+            self.animation_list.append(temp_list)
+
+        self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
 
@@ -110,6 +127,26 @@ class Behula(pygame.sprite.Sprite):
         if (self.rect.x + dx >= 10 and self.rect.x + dx <= 1150):
             self.rect.x += dx
         self.rect.y += dy
+
+    def update_animation(self):
+        # update animation
+        ANIMATION_COOLDOWN = 100
+        # update image depending on current frame
+        self.image = self.animation_list[self.action][self.frame_index]
+        # check if enough time has passed since the last update
+        if pygame.time.get_ticks() - self.update_time > ANIMATION_COOLDOWN:
+            self.update_time = pygame.time.get_ticks()
+            self.frame_index += 1
+        # if the animation has run out the reset back to the start
+        if self.frame_index >= len(self.animation_list[self.action]):
+            self.frame_index = 0
+
+    def update_action(self, new_action):
+        # dfsdf
+        if new_action != self.action:
+            self.action = new_action
+            self.frame_index = 0
+            self.update_time = pygame.time.get_ticks()
 
     def draw(self):
         screen.blit(pygame.transform.flip(
@@ -170,7 +207,7 @@ class Obstacle(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
-player = Behula('player', 200, 537, 0.5, 5)
+player = Behula('behula', 200, 537, 0.7, 5)
 
 # create the obstacle
 obstacles_group = pygame.sprite.Group()
@@ -192,7 +229,15 @@ while run:
     if abs(bg_scroll) > pine2_img.get_width():
         bg_scroll = 0
 
+    player.update_animation()
     player.draw()
+    # update player actions
+    if player.in_air:
+        # jump
+        player.update_action(1)
+    else:
+        # run
+        player.update_action(0)
 
     player.move(moving_left, moving_right)
 
