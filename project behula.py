@@ -7,10 +7,10 @@ Created on Sat Dec 10 23:57:18 2022
 from pygame import mixer
 import pygame
 import math
+import random
 
 mixer.init()
 pygame.init()
-
 
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 768
@@ -39,10 +39,10 @@ jump_fx.set_volume(1)
 
 # load images
 pine1_img = pygame.image.load('asset/pine1.png').convert_alpha()
-pine2_img = pygame.image.load('asset/bg1.png').convert_alpha()
+pine2_img = pygame.image.load('asset/bg2.png').convert_alpha()
 mountain_img = pygame.image.load('asset/mountain.png').convert_alpha()
 sky_img = pygame.image.load('asset/sky_cloud.png').convert_alpha()
-tiles = math.ceil(SCREEN_WIDTH/pine2_img.get_width())+1
+tiles = math.ceil(SCREEN_WIDTH / pine2_img.get_width()) + 1
 
 
 def draw_bg():
@@ -52,7 +52,7 @@ def draw_bg():
         # screen.blit(sky_img, ((x * width) - bg_scroll * 1, 0))
         # screen.blit(mountain_img, ((x * width) - bg_scroll * 0.6, SCREEN_HEIGHT - mountain_img.get_height() - 300))
         # screen.blit(pine1_img, ((x * width) - bg_scroll * 0.7, SCREEN_HEIGHT - pine1_img.get_height() - 150))
-        #screen.blit(pine2_img, pine2_img.get_rect())
+        # screen.blit(pine2_img, pine2_img.get_rect())
         screen.blit(pine2_img, (x * SCREEN_WIDTH + bg_scroll, 0))
         pygame.draw.rect(screen, (255, 0, 0), pine2_img.get_rect(), 1)
 
@@ -91,8 +91,7 @@ class Behula(pygame.sprite.Sprite):
 
         # jump
         if self.jump == True and self.in_air == False:
-            print("y")
-            self.vel_y = -11
+            self.vel_y = -15
             self.jump = False
             self.in_air = True
 
@@ -108,7 +107,7 @@ class Behula(pygame.sprite.Sprite):
             self.in_air = False
 
         # update rectangle position
-        if(self.rect.x + dx >= 10 and self.rect.x + dx <= 1150):
+        if (self.rect.x + dx >= 10 and self.rect.x + dx <= 1150):
             self.rect.x += dx
         self.rect.y += dy
 
@@ -117,7 +116,66 @@ class Behula(pygame.sprite.Sprite):
             self.image, self.flip, False), self.rect)
 
 
+class Obstacle(pygame.sprite.Sprite):
+
+    def __init__(self, x, y, scale, speed):
+        pygame.sprite.Sprite.__init__(self)
+        self.speed = speed
+        self.scale = scale
+        self.x = x
+        self.y = y
+        # Load images for the obstacles
+        self.obstacle_images = []
+        # 'stone1', 'stone2', 'tree1', 'tree2'
+        for image_name in ['stone1', 'stone2', 'tree1']:
+            img = pygame.image.load(
+                f'asset/{image_name}.png').convert_alpha()
+            self.image = pygame.transform.scale(
+                img, (int(img.get_width() * scale), int(img.get_height() * scale)))
+            self.rect = self.image.get_rect()
+            self.rect.center = (x, y)
+            self.obstacle_images.append(img)
+
+        #
+        self.image = random.choice(self.obstacle_images)
+
+        # position the obstacle just off the right side of the screen
+        self.x = SCREEN_WIDTH
+        # self.y = SCREEN_HEIGHT - self.image.get_height() - 200
+
+        # set initial rect
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+    def reset(self):
+        # assign a new position and reset
+        self.image = random.choice(self.obstacle_images)
+        self.x = SCREEN_WIDTH
+        # self.y = SCREEN_HEIGHT - self.image.get_height()
+
+    def update(self):
+        # move obs to left
+        self.x -= self.speed
+        # update the rect
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+        # update the mask
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def draw(self):
+        # screen.blit(self.image, (self.x, self.y))
+        screen.blit(self.image, self.rect)
+
+
 player = Behula('player', 200, 537, 0.5, 5)
+
+# create the obstacle
+obstacles_group = pygame.sprite.Group()
+obstacle = Obstacle(200, 550, 2, 5)
+obstacles_group.add(obstacle)
 
 # player2 = Soldier('enemy',400, 200, 0.5,5)
 
@@ -138,6 +196,12 @@ while run:
 
     player.move(moving_left, moving_right)
 
+    obstacle.draw()
+    obstacle.update()
+    # add to score and reset the obstacle when it goes off screen
+    if obstacle.x < obstacle.image.get_width() * -1:
+        obstacle.reset()
+
     for event in pygame.event.get():
         # quit game
         if event.type == pygame.QUIT:
@@ -145,8 +209,11 @@ while run:
         # keyboard presses
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w:
-                player.jump = True
-                jump_fx.play()
+                if player.in_air == False:
+                    player.jump = True
+                    jump_fx.play()
+                # player.jump = True
+                # jump_fx.play()
             if event.key == pygame.K_a:
                 moving_left = True
             if event.key == pygame.K_d:
