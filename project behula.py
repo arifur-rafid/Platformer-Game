@@ -29,6 +29,8 @@ GRAVITY = 0.75
 # define player action variables
 moving_left = False
 moving_right = False
+slide = False
+global_speed = 10
 
 bg_scroll = 0
 # define colours
@@ -67,6 +69,8 @@ class Behula(pygame.sprite.Sprite):
         self.flip = False
         self.jump = False
         self.in_air = True
+        self.slide = False
+        self.is_sliding = False
         self.vel_y = 0
         self.animation_list = []
         self.frame_index = 0
@@ -74,15 +78,18 @@ class Behula(pygame.sprite.Sprite):
         self.update_time = pygame.time.get_ticks()
 
         # load all images for the players
-        animation_types = ['run', 'jump']
+        animation_types = ['run', 'jump', 'slide']
         for animation in animation_types:
             # reset temporary list of images
             temp_list = []
             # count number of files in the folder
-            num_of_frames = len(os.listdir(f'asset/{self.char_type}/{animation}'))
+            num_of_frames = len(os.listdir(
+                f'asset/{self.char_type}/{animation}'))
             for i in range(num_of_frames):
-                img = pygame.image.load(f'asset/{self.char_type}/{animation}/{i}.png')
-                img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
+                img = pygame.image.load(
+                    f'asset/{self.char_type}/{animation}/{i}.png')
+                img = pygame.transform.scale(
+                    img, (int(img.get_width() * scale), int(img.get_height() * scale)))
                 temp_list.append(img)
             self.animation_list.append(temp_list)
 
@@ -107,26 +114,43 @@ class Behula(pygame.sprite.Sprite):
             self.direction = 1
 
         # jump
-        if self.jump == True and self.in_air == False:
+        if self.jump and not self.in_air:
             self.vel_y = -15
             self.jump = False
             self.in_air = True
 
         # apply gravity
-        self.vel_y += GRAVITY
-        if self.vel_y > 100:
-            self.vel_y
-        dy += self.vel_y
+        if self.in_air:
+            self.vel_y += GRAVITY
+            if self.vel_y > 100:
+                self.vel_y
+            dy += self.vel_y
+            # check collision
+            if self.rect.bottom + dy > 615:
+                dy = 615 - self.rect.bottom
+                self.in_air = False
+        self.rect.y += dy
 
-        # check collision
-        if self.rect.bottom + dy > 615:
-            dy = 615 - self.rect.bottom
-            self.in_air = False
+        # slide
+        if self.slide and not self.is_sliding:
+            self.vel_y = -15
+            self.slide = False
+            self.is_sliding = True
+
+        if self.is_sliding:
+            self.vel_y += GRAVITY
+            if self.vel_y > 50:
+                # reset player position after slide
+                player.update_action(0)
+                self.is_sliding = False
+                self.rect.y = 380
+            else:
+                # keep player sliding
+                self.rect.y = 550
 
         # update rectangle position
         if (self.rect.x + dx >= 10 and self.rect.x + dx <= 1150):
             self.rect.x += dx
-        self.rect.y += dy
 
     def update_animation(self):
         # update animation
@@ -207,11 +231,11 @@ class Obstacle(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
-player = Behula('behula', 200, 537, 0.7, 5)
+player = Behula('behula', 200, 520, 0.7, 5)
 
 # create the obstacle
 obstacles_group = pygame.sprite.Group()
-obstacle = Obstacle(200, 550, 2, 5)
+obstacle = Obstacle(200, 555, 2, global_speed)
 obstacles_group.add(obstacle)
 
 # player2 = Soldier('enemy',400, 200, 0.5,5)
@@ -223,7 +247,7 @@ while run:
     clock.tick(FPS)
 
     draw_bg()
-    bg_scroll -= 5
+    bg_scroll -= global_speed
 
     # reset scroll
     if abs(bg_scroll) > pine2_img.get_width():
@@ -235,6 +259,9 @@ while run:
     if player.in_air:
         # jump
         player.update_action(1)
+    elif player.is_sliding:
+        # slide
+        player.update_action(2)
     else:
         # run
         player.update_action(0)
@@ -243,7 +270,7 @@ while run:
 
     obstacle.draw()
     obstacle.update()
-    # add to score and reset the obstacle when it goes off screen
+    # add to score and reset the obstacle when it goes off-screen
     if obstacle.x < obstacle.image.get_width() * -1:
         obstacle.reset()
 
@@ -254,7 +281,7 @@ while run:
         # keyboard presses
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w:
-                if player.in_air == False:
+                if player.in_air == False and not player.is_sliding:
                     player.jump = True
                     jump_fx.play()
                 # player.jump = True
@@ -265,6 +292,9 @@ while run:
                 moving_right = True
             if event.key == pygame.K_ESCAPE:
                 run = False
+            if event.key == pygame.K_s:
+                if not player.is_sliding and not player.slide and not player.in_air:
+                    player.slide = True
 
         # keyboard button released
         if event.type == pygame.KEYUP:
@@ -274,6 +304,8 @@ while run:
                 moving_left = False
             if event.key == pygame.K_d:
                 moving_right = False
+            if event.key == pygame.K_s:
+                slide = False
 
     pygame.display.update()
 
