@@ -36,9 +36,12 @@ bg_scroll = 0
 # define colours
 BG = (144, 201, 120)
 
-# load sound
+# load jump sound
 jump_fx = pygame.mixer.Sound('audio/jump_audio.mp3')
 jump_fx.set_volume(1)
+# load hurt sound
+hurt_fx = pygame.mixer.Sound('audio/hurt_audio.mp3')
+hurt_fx.set_volume(1)
 
 # load images
 pine1_img = pygame.image.load('asset/pine1.png').convert_alpha()
@@ -46,6 +49,14 @@ pine2_img = pygame.image.load('asset/bg2.png').convert_alpha()
 mountain_img = pygame.image.load('asset/mountain.png').convert_alpha()
 sky_img = pygame.image.load('asset/sky_cloud.png').convert_alpha()
 tiles = math.ceil(SCREEN_WIDTH / pine2_img.get_width()) + 1
+
+# define font
+font = pygame.font.SysFont('Futura', 50)
+
+
+def draw_text(text, font, text_col, x, y):
+    img = font.render(text, True, text_col)
+    screen.blit(img, (x, y))
 
 
 def draw_bg():
@@ -75,6 +86,8 @@ class Behula(pygame.sprite.Sprite):
         self.animation_list = []
         self.frame_index = 0
         self.action = 0
+        self.score = 0
+        self.life = 50
         self.update_time = pygame.time.get_ticks()
 
         # load all images for the players
@@ -90,6 +103,8 @@ class Behula(pygame.sprite.Sprite):
                     f'asset/{self.char_type}/{animation}/{i}.png')
                 img = pygame.transform.scale(
                     img, (int(img.get_width() * scale), int(img.get_height() * scale)))
+                # Create a rectangle border around the image
+                pygame.draw.rect(img, (255, 0, 0), [0, 0, img.get_width(), img.get_height()], 1)
                 temp_list.append(img)
             self.animation_list.append(temp_list)
 
@@ -139,18 +154,29 @@ class Behula(pygame.sprite.Sprite):
 
         if self.is_sliding:
             self.vel_y += GRAVITY
-            if self.vel_y > 50:
+            if self.vel_y > 20:
+                # upper value in if condition controls slide duration
                 # reset player position after slide
                 player.update_action(0)
                 self.is_sliding = False
                 self.rect.y = 380
             else:
                 # keep player sliding
+                player.update_action(2)
                 self.rect.y = 550
 
         # update rectangle position
-        if (self.rect.x + dx >= 10 and self.rect.x + dx <= 1150):
+        if 10 <= self.rect.x + dx <= 1100:
             self.rect.x += dx
+
+        if pygame.sprite.spritecollide(self, obstacles_group, False):
+            if not obstacle.collide:
+                obstacle.collide = True
+                if self.life > 0:
+                    # player hurt sound
+                    hurt_fx.play()
+                    self.life -= 1
+                # self.collide_cooldown_time -= math.floor(global_speed % 10) + 1
 
     def update_animation(self):
         # update animation
@@ -166,9 +192,10 @@ class Behula(pygame.sprite.Sprite):
             self.frame_index = 0
 
     def update_action(self, new_action):
-        # dfsdf
+        # check if the new action is different to the previous one
         if new_action != self.action:
             self.action = new_action
+            # update the animation settings
             self.frame_index = 0
             self.update_time = pygame.time.get_ticks()
 
@@ -185,23 +212,27 @@ class Obstacle(pygame.sprite.Sprite):
         self.scale = scale
         self.x = x
         self.y = y
+        self.collide = False
         # Load images for the obstacles
         self.obstacle_images = []
         # 'stone1', 'stone2', 'tree1', 'tree2'
         for image_name in ['stone1', 'stone2', 'tree1']:
             img = pygame.image.load(
                 f'asset/{image_name}.png').convert_alpha()
-            self.image = pygame.transform.scale(
+            img = pygame.transform.scale(
                 img, (int(img.get_width() * scale), int(img.get_height() * scale)))
-            self.rect = self.image.get_rect()
+            # Create a rectangle border around the image
+            pygame.draw.rect(img, (255, 0, 0), [0, 0, img.get_width(), img.get_height()], 1)
+            self.rect = img.get_rect()
             self.rect.center = (x, y)
             self.obstacle_images.append(img)
 
-        #
+        # select a random obstacle
         self.image = random.choice(self.obstacle_images)
 
         # position the obstacle just off the right side of the screen
-        self.x = SCREEN_WIDTH
+        self.x = SCREEN_WIDTH + self.x + random.randint(700, 1200)
+        # self.x = SCREEN_WIDTH
         # self.y = SCREEN_HEIGHT - self.image.get_height() - 200
 
         # set initial rect
@@ -212,7 +243,13 @@ class Obstacle(pygame.sprite.Sprite):
     def reset(self):
         # assign a new position and reset
         self.image = random.choice(self.obstacle_images)
-        self.x = SCREEN_WIDTH
+        rand_list = [950, 1100, 1200]
+        # self.x = SCREEN_WIDTH
+        self.x = SCREEN_WIDTH + random.randint(700, 1200)
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.x, self.y)
+        player.score += 50
+        self.collide = False
         # self.y = SCREEN_HEIGHT - self.image.get_height()
 
     def update(self):
@@ -224,20 +261,26 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect.y = self.y
 
         # update the mask
-        self.mask = pygame.mask.from_surface(self.image)
+        # self.mask = pygame.mask.from_surface(self.image)
 
     def draw(self):
         # screen.blit(self.image, (self.x, self.y))
         screen.blit(self.image, self.rect)
+
+    def destroy(self):
+        # screen.blit(self.image, (self.x, self.y))
+        self.destroy()
 
 
 player = Behula('behula', 200, 520, 0.7, 5)
 
 # create the obstacle
 obstacles_group = pygame.sprite.Group()
-obstacle = Obstacle(200, 555, 2, global_speed)
+obstacle = Obstacle(200, 555, 1, global_speed)
 obstacles_group.add(obstacle)
 
+# obstacle2 = Obstacle(600, 350, 2, global_speed)
+# obstacles_group.add(obstacle2)
 # player2 = Soldier('enemy',400, 200, 0.5,5)
 
 
@@ -268,8 +311,26 @@ while run:
 
     player.move(moving_left, moving_right)
 
+    # show obstacle in screen
     obstacle.draw()
     obstacle.update()
+    # obstacle2.draw()
+    # obstacle2.update()
+
+    # show score
+    draw_text('SCORE: ', font, (255, 255, 255), SCREEN_WIDTH - 250 - 50, 35)
+    draw_text(str(player.score), font, (255, 255, 255), SCREEN_WIDTH - 150, 35)
+
+    # show player life
+    draw_text('LIFE: ', font, (255, 255, 255), 10, 35)
+    draw_text(str(player.life), font, (255, 255, 255), 70 + 50, 35)
+
+    # increase player speed after certain score
+    if player.score != 0 and player.score % 200 == 0:
+        player.score += 50
+        global_speed += 2
+        obstacle.speed = global_speed
+
     # add to score and reset the obstacle when it goes off-screen
     if obstacle.x < obstacle.image.get_width() * -1:
         obstacle.reset()
