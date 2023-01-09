@@ -87,7 +87,7 @@ class Behula(pygame.sprite.Sprite):
         self.frame_index = 0
         self.action = 0
         self.score = 0
-        self.life = 50
+        self.life = 10
         self.update_time = pygame.time.get_ticks()
 
         # load all images for the players
@@ -130,7 +130,7 @@ class Behula(pygame.sprite.Sprite):
 
         # jump
         if self.jump and not self.in_air:
-            self.vel_y = -15
+            self.vel_y = -18
             self.jump = False
             self.in_air = True
 
@@ -205,18 +205,18 @@ class Behula(pygame.sprite.Sprite):
 
 
 class Obstacle(pygame.sprite.Sprite):
-
     def __init__(self, x, y, scale, speed):
         pygame.sprite.Sprite.__init__(self)
         self.speed = speed
         self.scale = scale
+        self.is_active = False
         self.x = x
         self.y = y
         self.collide = False
         # Load images for the obstacles
         self.obstacle_images = []
         # 'stone1', 'stone2', 'tree1', 'tree2'
-        for image_name in ['stone1', 'stone2', 'tree1']:
+        for image_name in ['stone1', 'stone2', 'tree1', 'snake']:
             img = pygame.image.load(
                 f'asset/{image_name}.png').convert_alpha()
             img = pygame.transform.scale(
@@ -245,7 +245,7 @@ class Obstacle(pygame.sprite.Sprite):
         self.image = random.choice(self.obstacle_images)
         rand_list = [950, 1100, 1200]
         # self.x = SCREEN_WIDTH
-        self.x = SCREEN_WIDTH + random.randint(700, 1200)
+        self.x = SCREEN_WIDTH + random.randint(1, 1200)
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
         player.score += 50
@@ -273,11 +273,15 @@ class Obstacle(pygame.sprite.Sprite):
 
 
 player = Behula('behula', 200, 520, 0.7, 5)
+player_group = pygame.sprite.Group()
+player_group.add(player)
 
 # create the obstacle
 obstacles_group = pygame.sprite.Group()
 obstacle = Obstacle(200, 555, 1, global_speed)
+#obstacle2 = Obstacle(200, 350, 1, global_speed)
 obstacles_group.add(obstacle)
+#obstacles_group.add(obstacle2)
 
 # obstacle2 = Obstacle(600, 350, 2, global_speed)
 # obstacles_group.add(obstacle2)
@@ -314,8 +318,6 @@ while run:
     # show obstacle in screen
     obstacle.draw()
     obstacle.update()
-    # obstacle2.draw()
-    # obstacle2.update()
 
     # show score
     draw_text('SCORE: ', font, (255, 255, 255), SCREEN_WIDTH - 250 - 50, 35)
@@ -329,11 +331,21 @@ while run:
     if player.score != 0 and player.score % 200 == 0:
         player.score += 50
         global_speed += 2
-        obstacle.speed = global_speed
+        for x in obstacles_group:
+            x.speed = global_speed
 
-    # add to score and reset the obstacle when it goes off-screen
-    if obstacle.x < obstacle.image.get_width() * -1:
-        obstacle.reset()
+    # reset all obstacle position
+    for obs in obstacles_group:
+        if obs.x < obs.image.get_width() * -1:
+            obs.reset()
+
+    # if player life is 0 behula died
+    if player.life == 0:
+        global_speed = 0
+        player.update_action(2)
+        player.rect.y = 550
+        for x in obstacles_group:
+            x.speed = 0
 
     for event in pygame.event.get():
         # quit game
