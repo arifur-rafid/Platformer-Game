@@ -35,7 +35,7 @@ global_speed = 10
 bg_scroll = 0
 # define colours
 BG = (144, 201, 120)
-
+level = 1
 # load jump sound
 jump_fx = pygame.mixer.Sound('audio/jump_audio.mp3')
 jump_fx.set_volume(1)
@@ -87,7 +87,7 @@ class Behula(pygame.sprite.Sprite):
         self.frame_index = 0
         self.action = 0
         self.score = 0
-        self.life = 50
+        self.life = 2
         self.update_time = pygame.time.get_ticks()
 
         # load all images for the players
@@ -104,7 +104,7 @@ class Behula(pygame.sprite.Sprite):
                 img = pygame.transform.scale(
                     img, (int(img.get_width() * scale), int(img.get_height() * scale)))
                 # Create a rectangle border around the image
-                pygame.draw.rect(img, (255, 0, 0), [0, 0, img.get_width(), img.get_height()], 1)
+                #pygame.draw.rect(img, (255, 0, 0), [0, 0, img.get_width(), img.get_height()], 1)
                 temp_list.append(img)
             self.animation_list.append(temp_list)
 
@@ -130,7 +130,7 @@ class Behula(pygame.sprite.Sprite):
 
         # jump
         if self.jump and not self.in_air:
-            self.vel_y = -15
+            self.vel_y = -18
             self.jump = False
             self.in_air = True
 
@@ -222,7 +222,7 @@ class Obstacle(pygame.sprite.Sprite):
             img = pygame.transform.scale(
                 img, (int(img.get_width() * scale), int(img.get_height() * scale)))
             # Create a rectangle border around the image
-            pygame.draw.rect(img, (255, 0, 0), [0, 0, img.get_width(), img.get_height()], 1)
+            #pygame.draw.rect(img, (255, 0, 0), [0, 0, img.get_width(), img.get_height()], 1)
             self.rect = img.get_rect()
             self.rect.center = (x, y)
             self.obstacle_images.append(img)
@@ -334,6 +334,14 @@ while run:
     # add to score and reset the obstacle when it goes off-screen
     if obstacle.x < obstacle.image.get_width() * -1:
         obstacle.reset()
+
+    # if player life is 0 behula died
+    if player.life == 0:
+        global_speed = 0
+        player.update_action(2)
+        player.rect.y = 550
+        for x in obstacles_group:
+            x.speed = 0
 
     for event in pygame.event.get():
         # quit game
