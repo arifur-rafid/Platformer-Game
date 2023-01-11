@@ -35,6 +35,7 @@ global_speed = 10
 bg_scroll = 0
 # define colours
 BG = (144, 201, 120)
+color_white = (255,255,255)
 level = 1
 # load jump sound
 jump_fx = pygame.mixer.Sound('audio/jump_audio.mp3')
@@ -289,59 +290,62 @@ while run:
 
     clock.tick(FPS)
 
-    draw_bg()
-    bg_scroll -= global_speed
+    if level == 1:
+        draw_bg()
+        bg_scroll -= global_speed
 
-    # reset scroll
-    if abs(bg_scroll) > pine2_img.get_width():
-        bg_scroll = 0
+        # reset scroll
+        if abs(bg_scroll) > pine2_img.get_width():
+            bg_scroll = 0
 
-    player.update_animation()
-    player.draw()
-    # update player actions
-    if player.in_air:
-        # jump
-        player.update_action(1)
-    elif player.is_sliding:
-        # slide
-        player.update_action(2)
-    else:
-        # run
-        player.update_action(0)
+        player.update_animation()
+        player.draw()
+        # update player actions
+        if player.in_air:
+            # jump
+            player.update_action(1)
+        elif player.is_sliding:
+            # slide
+            player.update_action(2)
+        else:
+            # run
+            player.update_action(0)
 
-    player.move(moving_left, moving_right)
+        player.move(moving_left, moving_right)
 
-    # show obstacle in screen
-    obstacle.draw()
-    obstacle.update()
-    # obstacle2.draw()
-    # obstacle2.update()
+        # show obstacle in screen
+        obstacle.draw()
+        obstacle.update()
+        # obstacle2.draw()
+        # obstacle2.update()
 
-    # show score
-    draw_text('SCORE: ', font, (255, 255, 255), SCREEN_WIDTH - 250 - 50, 35)
-    draw_text(str(player.score), font, (255, 255, 255), SCREEN_WIDTH - 150, 35)
+        # show score
+        draw_text('SCORE: ', font, (255, 255, 255), SCREEN_WIDTH - 250 - 50, 35)
+        draw_text(str(player.score), font, (255, 255, 255), SCREEN_WIDTH - 150, 35)
 
-    # show player life
-    draw_text('LIFE: ', font, (255, 255, 255), 10, 35)
-    draw_text(str(player.life), font, (255, 255, 255), 70 + 50, 35)
+        # show player life
+        draw_text('LIFE: ', font, (255, 255, 255), 10, 35)
+        draw_text(str(player.life), font, (255, 255, 255), 70 + 50, 35)
 
-    # increase player speed after certain score
-    if player.score != 0 and player.score % 200 == 0:
-        player.score += 50
-        global_speed += 2
-        obstacle.speed = global_speed
+        # increase player speed after certain score
+        if player.score != 0 and player.score % 200 == 0:
+            player.score += 50
+            global_speed += 2
+            obstacle.speed = global_speed
 
-    # add to score and reset the obstacle when it goes off-screen
-    if obstacle.x < obstacle.image.get_width() * -1:
-        obstacle.reset()
+        # add to score and reset the obstacle when it goes off-screen
+        if obstacle.x < obstacle.image.get_width() * -1:
+            obstacle.reset()
 
-    # if player life is 0 behula died
-    if player.life == 0:
-        global_speed = 0
-        player.update_action(2)
-        player.rect.y = 550
-        for x in obstacles_group:
-            x.speed = 0
+        # if player life is 0 behula died
+        if player.life == 0:
+            global_speed = 0
+            player.update_action(2)
+            player.rect.y = 550
+            for x in obstacles_group:
+                x.speed = 0
+    elif level == 2:
+        screen.fill(color_white)
 
     for event in pygame.event.get():
         # quit game
@@ -364,6 +368,10 @@ while run:
             if event.key == pygame.K_s:
                 if not player.is_sliding and not player.slide and not player.in_air:
                     player.slide = True
+            if event.key == pygame.K_l:
+                level = 2
+            if event.key == pygame.K_m:
+                level = 1
 
         # keyboard button released
         if event.type == pygame.KEYUP:
