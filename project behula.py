@@ -127,7 +127,7 @@ class Behula(pygame.sprite.Sprite):
         self.update_time = pygame.time.get_ticks()
 
         # load all images for the players
-        animation_types = ['run', 'jump', 'slide']
+        animation_types = ['run', 'jump', 'slide', 'dead']
         for animation in animation_types:
             # reset temporary list of images
             temp_list = []
@@ -379,8 +379,8 @@ while run:
         if player.life == 0:
             global_speed = 0
             obstacle.speed = 0
-            player.update_action(2)
-            player.rect.y = 550
+            player.update_action(3)
+            player.rect.y = 570
             draw_gameover()
             bg_sound.stop()
     elif level == 2:
