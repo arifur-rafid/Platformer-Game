@@ -104,7 +104,7 @@ class Behula(pygame.sprite.Sprite):
         self.frame_index = 0
         self.action = 0
         self.score = 0
-        self.life = 2
+        self.life = 1
         self.update_time = pygame.time.get_ticks()
 
         # load all images for the players
@@ -220,6 +220,10 @@ class Behula(pygame.sprite.Sprite):
         screen.blit(pygame.transform.flip(
             self.image, self.flip, False), self.rect)
 
+    def reset(self):
+        self.rect.x = 100
+        self.rect.y = 400
+
 
 class Obstacle(pygame.sprite.Sprite):
 
@@ -303,7 +307,6 @@ obstacles_group.add(obstacle)
 
 run = True
 while run:
-
     clock.tick(FPS)
 
     if level == 1:
@@ -355,13 +358,12 @@ while run:
 
         # if player life is 0 behula died
         if player.life == 0:
-            level = 4
             global_speed = 0
+            obstacle.speed = 0
             player.update_action(2)
-            #player.rect.y = 550
-            for x in obstacles_group:
-                x.speed = 0
-            level = 4
+            player.rect.y = 550
+            draw_gameover()
+            bg_sound.stop()
 
     elif level == 2:
         screen.fill(color_white)
@@ -371,9 +373,6 @@ while run:
             vid.close()
             level = 1
             bg_sound.play(loops=-1)
-    elif level == 4:
-        draw_gameover()
-        bg_sound.stop()
 
     for event in pygame.event.get():
         # quit game
@@ -405,16 +404,19 @@ while run:
                 level = 1
                 bg_sound.play(loops=-1)
             if event.key == pygame.K_y:
-                if level == 4:
+                if player.life == 0:
                     obstacle.reset()
+                    player.reset()
                     global_speed = 10
                     player.score = 0
-                    player.life = 2
+                    player.life = 1
                     obstacle.speed = global_speed
                     player.update_action(0)
                     level = 1
+                    bg_sound.play(loops=-1)
+
             if event.key == pygame.K_n:
-                if level == 4:
+                if player.life == 0:
                     run = False
 
         # keyboard button released
