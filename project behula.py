@@ -9,6 +9,7 @@ import pygame
 import math
 import random
 import os
+from pyvidplayer import Video
 
 mixer.init()
 pygame.init()
@@ -36,21 +37,22 @@ bg_scroll = 0
 # define colours
 BG = (144, 201, 120)
 color_white = (255,255,255)
-level = 1
+level = 3
 # load jump sound
 jump_fx = pygame.mixer.Sound('audio/jump_audio.mp3')
 jump_fx.set_volume(1)
 # load hurt sound
 hurt_fx = pygame.mixer.Sound('audio/hurt_audio.mp3')
 hurt_fx.set_volume(1)
-
+bg_sound = pygame.mixer.Sound('audio/bg_sound_lvl1.mp3')
+bg_sound.set_volume(.5)
 # load images
 pine1_img = pygame.image.load('asset/pine1.png').convert_alpha()
 pine2_img = pygame.image.load('asset/bg2.png').convert_alpha()
 mountain_img = pygame.image.load('asset/mountain.png').convert_alpha()
 sky_img = pygame.image.load('asset/sky_cloud.png').convert_alpha()
 tiles = math.ceil(SCREEN_WIDTH / pine2_img.get_width()) + 1
-
+vid = Video("video/behula_song.mp4")
 # define font
 font = pygame.font.SysFont('Futura', 50)
 
@@ -58,6 +60,12 @@ font = pygame.font.SysFont('Futura', 50)
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
+
+
+def intro_video():
+    vid.set_size((1280, 768))
+    vid.draw(screen, (0, 0))
+    pygame.display.update()
 
 
 def draw_bg():
@@ -346,6 +354,12 @@ while run:
                 x.speed = 0
     elif level == 2:
         screen.fill(color_white)
+    elif level == 3:
+        intro_video()
+        if vid.get_pos() > 53:
+            vid.close()
+            level = 1
+            bg_sound.play(loops=-1)
 
     for event in pygame.event.get():
         # quit game
@@ -372,6 +386,10 @@ while run:
                 level = 2
             if event.key == pygame.K_m:
                 level = 1
+            if event.key == pygame.K_SPACE:
+                vid.close()
+                level = 1
+                bg_sound.play(loops=-1)
 
         # keyboard button released
         if event.type == pygame.KEYUP:
