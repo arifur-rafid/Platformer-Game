@@ -68,6 +68,14 @@ def intro_video():
     pygame.display.update()
 
 
+def draw_gameover():
+    font = pygame.font.Font(pygame.font.get_default_font(), 30)
+    text = font.render('Game over. Play again? (Enter Y or N)', True, color_white)
+    text_rect = text.get_rect()
+    text_rect.center = (screen.get_width() / 2, 400)
+    screen.blit(text, text_rect)
+
+
 def draw_bg():
     screen.fill(BG)
     width = sky_img.get_width()
@@ -347,11 +355,14 @@ while run:
 
         # if player life is 0 behula died
         if player.life == 0:
+            level = 4
             global_speed = 0
             player.update_action(2)
-            player.rect.y = 550
+            #player.rect.y = 550
             for x in obstacles_group:
                 x.speed = 0
+            level = 4
+
     elif level == 2:
         screen.fill(color_white)
     elif level == 3:
@@ -360,6 +371,9 @@ while run:
             vid.close()
             level = 1
             bg_sound.play(loops=-1)
+    elif level == 4:
+        draw_gameover()
+        bg_sound.stop()
 
     for event in pygame.event.get():
         # quit game
@@ -390,6 +404,18 @@ while run:
                 vid.close()
                 level = 1
                 bg_sound.play(loops=-1)
+            if event.key == pygame.K_y:
+                if level == 4:
+                    obstacle.reset()
+                    global_speed = 10
+                    player.score = 0
+                    player.life = 2
+                    obstacle.speed = global_speed
+                    player.update_action(0)
+                    level = 1
+            if event.key == pygame.K_n:
+                if level == 4:
+                    run = False
 
         # keyboard button released
         if event.type == pygame.KEYUP:
