@@ -9,6 +9,7 @@ import pygame
 import math
 import random
 import os
+from button import Button
 from pyvidplayer import Video
 
 mixer.init()
@@ -37,7 +38,7 @@ bg_scroll = 0
 # define colours
 BG = (144, 201, 120)
 color_white = (255,255,255)
-level = 3
+level = 2
 # load jump sound
 jump_fx = pygame.mixer.Sound('audio/jump_audio.mp3')
 jump_fx.set_volume(1)
@@ -55,6 +56,10 @@ tiles = math.ceil(SCREEN_WIDTH / pine2_img.get_width()) + 1
 vid = Video("video/behula_song.mp4")
 # define font
 font = pygame.font.SysFont('Futura', 50)
+PLAY_BUTTON = Button(image=pygame.image.load("asset/Play Rect.png"), pos=(640, 500), text_input="PLAY",
+                     font=pygame.font.Font("asset/font.ttf", 30), base_color="#d7fcd4", hovering_color="Blue")
+QUIT_BUTTON = Button(image=pygame.image.load("asset/Quit Rect.png"), pos=(640, 650), text_input="QUIT",
+                     font=pygame.font.Font("asset/font.ttf", 30), base_color="#d7fcd4", hovering_color="blue")
 
 
 def draw_text(text, font, text_col, x, y):
@@ -62,9 +67,13 @@ def draw_text(text, font, text_col, x, y):
     screen.blit(img, (x, y))
 
 
-def intro_video():
-    vid.set_size((1280, 768))
-    vid.draw(screen, (0, 0))
+def menu_screen():
+    BG = pygame.image.load("asset/mbg2.png")
+    screen.blit(BG, (0, 0))
+    MENU_MOUSE_POS = pygame.mouse.get_pos()
+    for button in [PLAY_BUTTON, QUIT_BUTTON]:
+        button.changeColor(MENU_MOUSE_POS)
+        button.update(screen)
     pygame.display.update()
 
 
@@ -74,6 +83,16 @@ def draw_gameover():
     text_rect = text.get_rect()
     text_rect.center = (screen.get_width() / 2, 400)
     screen.blit(text, text_rect)
+
+
+def intro_video():
+    vid.set_size((1280, 768))
+    vid.draw(screen, (0, 0))
+    pygame.display.update()
+
+
+def get_font(size): # Returns Press-Start-2P in the desired size
+    return pygame.font.Font("asset/font.ttf", size)
 
 
 def draw_bg():
@@ -364,11 +383,15 @@ while run:
             player.rect.y = 550
             draw_gameover()
             bg_sound.stop()
-
     elif level == 2:
-        screen.fill(color_white)
+        vid.pause()
+        #print("menu: "+ str(vid.get_paused()))
+        menu_screen()
     elif level == 3:
+        #print("video: " + str(vid.get_paused()))
         intro_video()
+        if vid.get_paused():
+            vid.toggle_pause()
         if vid.get_pos() > 53:
             vid.close()
             level = 1
@@ -384,8 +407,6 @@ while run:
                 if player.in_air == False and not player.is_sliding:
                     player.jump = True
                     jump_fx.play()
-                # player.jump = True
-                # jump_fx.play()
             if event.key == pygame.K_a:
                 moving_left = True
             if event.key == pygame.K_d:
@@ -414,10 +435,18 @@ while run:
                     player.update_action(0)
                     level = 1
                     bg_sound.play(loops=-1)
-
             if event.key == pygame.K_n:
                 if player.life == 0:
                     run = False
+
+        # keyboard button released
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            MENU_MOUSE_POS = pygame.mouse.get_pos()
+            print(MENU_MOUSE_POS)
+            if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
+                level = 3
+            if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
+                run = False
 
         # keyboard button released
         if event.type == pygame.KEYUP:
