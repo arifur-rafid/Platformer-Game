@@ -19,7 +19,7 @@ SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 768
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Project X')
+pygame.display.set_caption('Behula')
 
 # set framerate
 clock = pygame.time.Clock()
@@ -123,7 +123,7 @@ class Behula(pygame.sprite.Sprite):
         self.frame_index = 0
         self.action = 0
         self.score = 0
-        self.life = 1
+        self.life = 3
         self.update_time = pygame.time.get_ticks()
 
         # load all images for the players
@@ -395,6 +395,7 @@ while run:
         if vid.get_pos() > 53:
             vid.close()
             level = 1
+            # Game background sound
             bg_sound.play(loops=-1)
 
     for event in pygame.event.get():
@@ -430,7 +431,7 @@ while run:
                     player.reset()
                     global_speed = 10
                     player.score = 0
-                    player.life = 1
+                    player.life = 3
                     obstacle.speed = global_speed
                     player.update_action(0)
                     level = 1
